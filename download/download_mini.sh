@@ -1,4 +1,4 @@
-wget https://huggingface.co/datasets/OpenDriveLab/OpenScene/resolve/main/openscene-v1.1/openscene_metadata_mini.tgz
+wget https://hf-mirror.com/datasets/OpenDriveLab/OpenScene/resolve/main/openscene-v1.1/openscene_metadata_mini.tgz
 tar -xzf openscene_metadata_mini.tgz
 rm openscene_metadata_mini.tgz
 
