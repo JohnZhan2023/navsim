@@ -23,6 +23,7 @@ class LinearNormalizer(DictOfTensorMixin):
         range_eps=1e-4,
         fit_offset=True):
         if isinstance(data, dict):
+            print("it is the dict, so we move to the parms_dict")
             for key, value in data.items():
                 self.params_dict[key] =  _fit(value, 
                     last_n_dims=last_n_dims,
@@ -52,6 +53,7 @@ class LinearNormalizer(DictOfTensorMixin):
         self.params_dict[key] = value.params_dict
 
     def _normalize_impl(self, x, forward=True):
+        print(self.params_dict)
         if isinstance(x, dict):
             result = dict()
             for key, value in x.items():

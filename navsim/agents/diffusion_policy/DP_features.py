@@ -34,6 +34,7 @@ class DPFeatureBuilder(AbstractFeatureBuilder):
 
     def compute_features(self, agent_input: AgentInput) -> Dict[str, torch.Tensor]:
         """Inherited, see superclass."""
+        print("we calculate the features!!!!!!!!!!!!!!!!!")
         features = {}
         features["camera_feature"] = self._get_camera_feature(agent_input)
         # features["lidar_feature"] = self._get_lidar_feature(agent_input)
@@ -53,7 +54,6 @@ class DPFeatureBuilder(AbstractFeatureBuilder):
         :param agent_input: input dataclass
         :return: stitched front view image as torch tensor
         """
-
         cameras = agent_input.cameras[-1]
 
         # Crop to ensure 4:1 aspect ratio

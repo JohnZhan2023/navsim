@@ -20,7 +20,6 @@ from navsim.planning.training.abstract_feature_target_builder import (
 from navsim.common.dataclasses import Scene
 
 from navsim.agents.diffusion_policy.DPconfig import DPConfig
-from navsim.agents.diffusion_policy.diffusion_policy import DPmodel
 from navsim.agents.diffusion_policy.DPcallback import DPCallback
 from navsim.agents.diffusion_policy.DPloss import dp_loss
 from navsim.agents.diffusion_policy.DP_features import DPTargetBuilder,DPFeatureBuilder
@@ -70,12 +69,13 @@ class DPAgent(AbstractAgent):
     
 
     def get_target_builders(self) -> List[AbstractTargetBuilder]:
-        return [DPTargetBuilder(config=self.config),]
+        return [DPTargetBuilder(config=self._config),]
 
     def get_feature_builders(self) -> List[AbstractFeatureBuilder]:
-        return [DPFeatureBuilder(config=self.config)]
+        return [DPFeatureBuilder(config=self._config)]
 
     def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        features["status_feature"] = features["status_feature"].unsqueeze(1)
         self._dp_model.predict_action(features)
         return self._dp_model.predict_action(features)
 
@@ -88,7 +88,7 @@ class DPAgent(AbstractAgent):
         return dp_loss(targets, predictions, self._config)
     
     def get_optimizers(self) -> Union[Optimizer, Dict[str, Union[Optimizer, LRScheduler]]]:
-        return torch.optim.Adam(self._transfuser_model.parameters(), lr=self._lr)
+        return torch.optim.Adam(self._dp_model.parameters(), lr=self._lr)
 
     def get_training_callbacks(self) -> List[pl.Callback]:
         return [DPCallback(config=self._config),]

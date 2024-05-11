@@ -70,8 +70,6 @@ def build_datasets(cfg: DictConfig, agent: AbstractAgent) -> Tuple[Dataset, Data
 
 @hydra.main(config_path=CONFIG_PATH, config_name=CONFIG_NAME)
 def main(cfg: DictConfig) -> None:
-    OmegaConf.save(cfg, "/root/navsim/cfg.yaml")
-    print("saved!!!!!!!!!!!")
     logger.info("Global Seed set to 0")
     pl.seed_everything(0, workers=True)
 

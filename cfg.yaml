@@ -25,7 +25,7 @@ logger_level: info
 logger_format_string: null
 max_number_of_workers: null
 gpu: true
-experiment_name: training_transfuser_agent
+experiment_name: training_dp_agent
 navsim_log_path: /cephfs/zhanjh/openscene_v1.1/navsim_logs/${split}
 sensor_blobs_path: /cephfs/zhanjh/openscene_v1.1/sensor_blobs/${split}
 date_format: '%Y.%m.%d.%H.%M.%S'
@@ -15945,10 +15945,10 @@ test_logs:
 - 2021.10.06.08.34.20_veh-53_01000_01070
 - 2021.10.06.08.34.20_veh-53_01089_01868
 agent:
-  _target_: navsim.agents.transfuser.transfuser_agent.TransfuserAgent
+  _target_: navsim.agents.diffusion_policy.DPagent.DPAgent
   _convert_: all
   config:
-    _target_: navsim.agents.transfuser.transfuser_config.TransfuserConfig
+    _target_: navsim.agents.diffusion_policy.DPconfig.DPConfig
     _convert_: all
     trajectory_sampling:
       _target_: nuplan.planning.simulation.trajectory.trajectory_sampling.TrajectorySampling

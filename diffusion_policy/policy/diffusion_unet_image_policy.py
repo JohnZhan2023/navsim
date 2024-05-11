@@ -16,7 +16,7 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
     def __init__(self, 
             shape_meta: dict,
             noise_scheduler: DDPMScheduler,
-            obs_encoder: MultiImageObsEncoder,# actually we don't need this
+            obs_encoder,
             horizon, 
             n_action_steps, 
             n_obs_steps,
@@ -36,7 +36,7 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
         assert len(action_shape) == 1
         action_dim = action_shape[0]
         # get feature dim
-        obs_feature_dim = obs_encoder.output_shape()[0]
+        obs_feature_dim = obs_encoder.output_shape[0]
 
         # create diffusion model
         input_dim = action_dim + obs_feature_dim
@@ -127,6 +127,8 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
         """
         assert 'past_action' not in obs_dict # not implemented yet
         # normalize input
+        print(obs_dict.keys())
+        self.normalizer.fit(obs_dict)
         nobs = self.normalizer.normalize(obs_dict)
         value = next(iter(nobs.values()))
         B, To = value.shape[:2]
@@ -164,7 +166,7 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
 
         # run sampling
         nsample = self.conditional_sample(
-            cond_data, 
+            cond_data, # cond_data的意思是有条件下生成的data！！！！！！！！！
             cond_mask,
             local_cond=local_cond,
             global_cond=global_cond,

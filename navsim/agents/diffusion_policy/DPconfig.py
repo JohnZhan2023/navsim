@@ -7,6 +7,30 @@ from nuplan.planning.simulation.trajectory.trajectory_sampling import Trajectory
 
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 
+import torch
+import torch.nn as nn
+class MLPEncoder(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super(MLPEncoder, self).__init__()
+        self.output_shape = [output_dim]
+        # 第一个全连接层
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        # ReLU 激活函数
+        self.relu = nn.ReLU()
+        # 第二个全连接层，输出维度为全局条件的维度
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, x):
+        # batchsize is 32
+        print("camera shape:",x["camera_feature"].shape)
+        print("lidar shape:",x["lidar_feature"].shape)
+        print("status shape:",x["status_feature"].shape)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        return x
+    def output_shape(self):
+        return self.output_shape
 @dataclass
 class DPConfig:
 
@@ -18,13 +42,24 @@ class DPConfig:
     output_length=8
     action_dim=3
     horizon=16
-    noise_scheduler=DDPMScheduler()# TODO
-    shape_meta={"action": {"shape": (3,)}}  
-    obs_encoder=None  #TODO
+    noise_scheduler=DDPMScheduler(
+        num_train_timesteps=1000,  # 定义扩散的时间步数
+        beta_schedule="linear",    # 使用线性时间表
+        beta_start=0.0001,         # 起始 beta 值
+        beta_end=0.02              # 结束 beta 值
+    )
+
     n_action_steps=8
     n_obs_steps=4
     feature_dim=256
     obs_as_global_cond=True
+    shape_meta={"action": {"shape": (3,)}}  
+    obs_encoder=MLPEncoder(
+        input_dim=feature_dim,          # 从配置的 feature_dim 字段
+        hidden_dim=(int)(feature_dim*1.5),         # 自定义隐藏层维度
+        output_dim=feature_dim      # 输入历史长度乘以特征维度
+    )
+    
 
     
     # image_architecture: str = "resnet34"

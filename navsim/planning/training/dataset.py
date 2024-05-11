@@ -215,7 +215,7 @@ class Dataset(torch.utils.data.Dataset):
         return len(self._scene_loader)
 
     def __getitem__(self, idx: int) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
-
+        # 每次dataset[0]都会call这个函数
         token = self._scene_loader.tokens[idx]
         features: Dict[str, torch.Tensor] = {}
         targets: Dict[str, torch.Tensor] = {}
@@ -229,6 +229,8 @@ class Dataset(torch.utils.data.Dataset):
         else:
             scene = self._scene_loader.get_scene_from_token(self._scene_loader.tokens[idx])
             agent_input = scene.get_agent_input()
+            with open("/root/navsim/hello.txt", "w") as f:
+                f.write("we are here", agent_input,self._feature_builders,self._target_builders)
             for builder in self._feature_builders:
                 features.update(builder.compute_features(agent_input))
             for builder in self._target_builders:
