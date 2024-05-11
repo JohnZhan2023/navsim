@@ -6,6 +6,7 @@ from omegaconf import DictConfig
 from pathlib import Path
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
+from omegaconf import OmegaConf
 
 from navsim.planning.training.dataset import CacheOnlyDataset, Dataset
 from navsim.planning.training.agent_lightning_module import AgentLightningModule
@@ -69,12 +70,15 @@ def build_datasets(cfg: DictConfig, agent: AbstractAgent) -> Tuple[Dataset, Data
 
 @hydra.main(config_path=CONFIG_PATH, config_name=CONFIG_NAME)
 def main(cfg: DictConfig) -> None:
+    OmegaConf.save(cfg, "/root/navsim/cfg.yaml")
+    print("saved!!!!!!!!!!!")
     logger.info("Global Seed set to 0")
     pl.seed_everything(0, workers=True)
 
     logger.info(f"Path where all results are stored: {cfg.output_dir}")
 
     logger.info("Building Agent")
+    print(cfg.agent)
     agent: AbstractAgent = instantiate(cfg.agent)
 
     logger.info("Building Lightning Module")

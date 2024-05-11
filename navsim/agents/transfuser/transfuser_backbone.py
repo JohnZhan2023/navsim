@@ -21,7 +21,7 @@ class TransfuserBackbone(nn.Module):
         self.config = config
 
         self.image_encoder = timm.create_model(
-            config.image_architecture, pretrained=True, features_only=True
+            config.image_architecture, pretrained=False, features_only=True
         )
         if config.use_ground_plane:
             in_channels = 2 * config.lidar_seq_len

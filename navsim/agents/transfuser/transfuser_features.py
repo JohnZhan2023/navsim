@@ -55,7 +55,7 @@ class TransfuserFeatureBuilder(AbstractFeatureBuilder):
         :param agent_input: input dataclass
         :return: stitched front view image as torch tensor
         """
-
+        
         cameras = agent_input.cameras[-1]
 
         # Crop to ensure 4:1 aspect ratio

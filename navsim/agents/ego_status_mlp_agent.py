@@ -59,7 +59,8 @@ class EgoStatusMLPAgent(AbstractAgent):
         self._checkpoint_path = checkpoint_path
 
         self._lr = lr
-
+        print("initailizing ego ...")
+        print("#################################")
         self._mlp = torch.nn.Sequential(
             torch.nn.Linear(8, hidden_layer_dim),
             torch.nn.ReLU(),
@@ -109,5 +110,5 @@ class EgoStatusMLPAgent(AbstractAgent):
     ) -> torch.Tensor:
         return torch.nn.functional.l1_loss(predictions["trajectory"], targets["trajectory"])
 
-    def get_optimizers(self) -> Optimizer | Dict[str, Optimizer | LRScheduler]:
+    def get_optimizers(self) :
         return torch.optim.Adam(self._mlp.parameters(), lr=self._lr)
