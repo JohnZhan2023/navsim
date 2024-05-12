@@ -65,7 +65,7 @@ class DPAgent(AbstractAgent):
 
     def get_sensor_config(self) -> SensorConfig:
         """Inherited, see superclass."""
-        return SensorConfig.build_all_sensors(include=[self._config.input_history])# the obs n steps is 3
+        return SensorConfig.build_all_sensors(include=self._config.input_history)# the obs n steps is 3
     
 
     def get_target_builders(self) -> List[AbstractTargetBuilder]:

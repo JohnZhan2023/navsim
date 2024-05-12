@@ -64,6 +64,7 @@ class Cameras:
             camera_identifier = camera_name.lower()
             if camera_identifier in sensor_names:
                 image_path = sensor_blobs_path / camera_dict[camera_name]["data_path"]
+                #camera identifier is the  cam #1
                 data_dict[camera_identifier] = Camera(
                     image=np.array(Image.open(image_path)),
                     sensor2lidar_rotation=camera_dict[camera_name]["sensor2lidar_rotation"],
@@ -72,8 +73,7 @@ class Cameras:
                     distortion=camera_dict[camera_name]["distortion"],
                 )
             else:
-                data_dict[camera_identifier] = Camera()  # empty camera
-
+                data_dict[camera_identifier] = Camera()  # 
         return Cameras(
             cam_f0=data_dict["cam_f0"],
             cam_l0=data_dict["cam_l0"],
@@ -377,7 +377,7 @@ class Scene:
         sensor_config: SensorConfig,
     ) -> Scene:
         assert len(scene_dict_list) >= 0, "Scene list is empty!"
-
+        print("we begin to load scene")
         scene_metadata = SceneMetadata(
             log_name=scene_dict_list[num_history_frames - 1]["log_name"],
             scene_token=scene_dict_list[num_history_frames - 1]["scene_token"],
@@ -387,13 +387,14 @@ class Scene:
             num_future_frames=num_future_frames,
         )
         map_api = cls._build_map_api(scene_metadata.map_name)
-
+        print("len of iteration:",len(scene_dict_list))
         frames: List[Frame] = []
         for frame_idx in range(len(scene_dict_list)):
             global_ego_status = cls._build_ego_status(scene_dict_list[frame_idx])
             annotations = cls._build_annotations(scene_dict_list[frame_idx])
 
             sensor_names = sensor_config.get_sensors_at_iteration(frame_idx)
+            # TODO the most important point is to get the camera_dict
 
             cameras = Cameras.from_camera_dict(
                 sensor_blobs_path=sensor_blobs_path,
@@ -418,6 +419,7 @@ class Scene:
                 cameras=cameras,
             )
             frames.append(frame)
+
 
         return Scene(scene_metadata=scene_metadata, map_api=map_api, frames=frames)
 
@@ -471,9 +473,10 @@ class SensorConfig:
     lidar_pc: Union[bool, List[int]]
 
     def get_sensors_at_iteration(self, iteration: int) -> List[str]:
-
+        
         sensors_at_iteration: List[str] = []
         for sensor_name, sensor_include in asdict(self).items():
+
             if isinstance(sensor_include, bool) and sensor_include:
                 sensors_at_iteration.append(sensor_name)
             elif isinstance(sensor_include, list) and iteration in sensor_include:

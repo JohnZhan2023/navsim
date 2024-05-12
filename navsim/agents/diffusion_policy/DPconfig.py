@@ -23,8 +23,13 @@ class MLPEncoder(nn.Module):
     def forward(self, x):
         # batchsize is 32
         print("camera shape:",x["camera_feature"].shape)
-        print("lidar shape:",x["lidar_feature"].shape)
+        # print("lidar shape:",x["lidar_feature"].shape)
         print("status shape:",x["status_feature"].shape)
+        # 展平除第一维度以外的所有维度
+        flattened_camera = x['camera_feature'].view(x['camera_feature'].size(0), -1)
+        # flattened_lidar = x['lidar_feature'].view(x['lidar_feature'].size(0), -1)
+        flattened_status = x['status_feature'].view(x['status_feature'].size(0), -1)
+        x = torch.cat((flattened_camera,  flattened_status), dim=1)
         x = self.fc1(x)
         x = self.relu(x)
         x = self.fc2(x)
@@ -38,7 +43,7 @@ class DPConfig:
         time_horizon=4, interval_length=0.5
     )
 
-    input_history=4
+    input_history=[0,1,2,3]
     output_length=8
     action_dim=3
     horizon=16
@@ -55,12 +60,12 @@ class DPConfig:
     obs_as_global_cond=True
     shape_meta={"action": {"shape": (3,)}}  
     obs_encoder=MLPEncoder(
-        input_dim=feature_dim,          # 从配置的 feature_dim 字段
-        hidden_dim=(int)(feature_dim*1.5),         # 自定义隐藏层维度
+        input_dim=256*1024*3+8,          # 从配置的 feature_dim 字段
+        hidden_dim=(int)(256*1024*3*1.5),         # 自定义隐藏层维度
         output_dim=feature_dim      # 输入历史长度乘以特征维度
     )
     
-
+    
     
     # image_architecture: str = "resnet34"
     # lidar_architecture: str = "resnet34"

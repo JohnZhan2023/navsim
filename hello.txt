@@ -1,1 +1,1 @@
-hello
+None[<navsim.agents.diffusion_policy.DP_features.DPFeatureBuilder object at 0x7f297e27b1f0>]

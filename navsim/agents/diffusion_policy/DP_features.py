@@ -54,19 +54,27 @@ class DPFeatureBuilder(AbstractFeatureBuilder):
         :param agent_input: input dataclass
         :return: stitched front view image as torch tensor
         """
-        cameras = agent_input.cameras[-1]
-
-        # Crop to ensure 4:1 aspect ratio
-        l0 = cameras.cam_l0.image[28:-28, 416:-416]
-        f0 = cameras.cam_f0.image[28:-28]
-        r0 = cameras.cam_r0.image[28:-28, 416:-416]
-
-        # stitch l0, f0, r0 images
-        stitched_image = np.concatenate([l0, f0, r0], axis=1)
-        resized_image = cv2.resize(stitched_image, (1024, 256))
-        tensor_image = transforms.ToTensor()(resized_image)
-
-        return tensor_image
+        reuslt = []
+        for cameras in agent_input.cameras:
+            print(len(agent_input.cameras))
+            print(agent_input.cameras[-1].cam_b0.image.shape)
+            # Crop to ensure 4:1 aspect ratio
+            l0 = cameras.cam_l0.image[28:-28, 416:-416]
+            l1 = cameras.cam_l1.image[28:-28, 416:-416]
+            l2 = cameras.cam_l2.image[28:-28, 416:-416]
+            f0 = cameras.cam_f0.image[28:-28]
+            r0 = cameras.cam_r0.image[28:-28, 416:-416]
+            r1 = cameras.cam_r1.image[28:-28, 416:-416]
+            r2 = cameras.cam_r2.image[28:-28, 416:-416]
+            b0 = cameras.cam_b0.image[28:-28]
+            # stitch l0, f0, r0 images
+            stitched_image = np.concatenate([l2,l1,l0, f0, r0,r1,r2,b0], axis=1)
+            resized_image = cv2.resize(stitched_image, (1024, 256))
+            tensor_image = transforms.ToTensor()(resized_image)
+            reuslt.append(tensor_image)
+        result= torch.stack(reuslt, dim=0) 
+        print("result shape",result.shape)
+        return result
 
     # def _get_lidar_feature(self, agent_input: AgentInput) -> torch.Tensor:
     #     """
@@ -133,18 +141,9 @@ class DPTargetBuilder(AbstractTargetBuilder):
                 num_trajectory_frames=self._config.trajectory_sampling.num_poses
             ).poses
         )
-        frame_idx = scene.scene_metadata.num_history_frames - 1
-        annotations = scene.frames[frame_idx].annotations
-        ego_pose = StateSE2(*scene.frames[frame_idx].ego_status.ego_pose)
-
-        agent_states, agent_labels = self._compute_agent_targets(annotations)
-        bev_semantic_map = self._compute_bev_semantic_map(annotations, scene.map_api, ego_pose)
 
         return {
             "trajectory": trajectory,
-            "agent_states": agent_states,
-            "agent_labels": agent_labels,
-            "bev_semantic_map": bev_semantic_map,
         }
 
     def _compute_agent_targets(self, annotations: Annotations) -> Tuple[torch.Tensor, torch.Tensor]:

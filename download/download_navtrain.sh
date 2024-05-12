@@ -1,4 +1,4 @@
-wget https://huggingface.co/datasets/OpenDriveLab/OpenScene/resolve/main/openscene-v1.1/openscene_metadata_trainval.tgz
+wget https://hf-mirror.com/datasets/OpenDriveLab/OpenScene/resolve/main/openscene-v1.1/openscene_metadata_trainval.tgz
 tar -xzf openscene_metadata_trainval.tgz
 rm openscene_metadata_trainval.tgz
 mv openscene-v1.1/meta_datas trainval_navsim_logs

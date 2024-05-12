@@ -13,7 +13,7 @@ defaults:
   - default_train_val_test_log_split
   - agent: ego_status_mlp_agent
 
-split: trainval
+split: mini
 cache_path: ${oc.env:NAVSIM_EXP_ROOT}/training_cache
 use_cache_without_dataset: false # load the training samples from the cache. scene-filter will be ignored
 force_cache_computation: false
