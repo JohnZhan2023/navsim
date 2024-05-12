@@ -9,31 +9,37 @@ from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 class MLPEncoder(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim):
+    def __init__(self, input_dim,  output_dim):
         super(MLPEncoder, self).__init__()
         self.output_shape = [output_dim]
-        # 第一个全连接层
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
-        # ReLU 激活函数
-        self.relu = nn.ReLU()
-        # 第二个全连接层，输出维度为全局条件的维度
-        self.fc2 = nn.Linear(hidden_dim, output_dim)
+        # 卷积层用于压缩 camera_feature
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1)  # 减半图像尺寸
+        self.pool = nn.MaxPool2d(2, 2)  # 再次减半图像尺寸
+        # 计算卷积后的尺寸以适配全连接层
+        # 假设 camera_feature 的原始尺寸是 [3, 256, 1024]
+        self.conv_output_size = 16 * (256 // 4) * (1024 // 4)  # stride 和 pooling 各减半尺寸
+
+        # 全连接层处理压缩后的 camera_feature
+        self.fc_camera = nn.Linear(self.conv_output_size, output_dim)
+
+        # 全连接层处理 status_feature
+        self.fc_status = nn.Linear(input_dim, output_dim)  # 压缩 status_feature 到 output_dim 维
 
     def forward(self, x):
-        # batchsize is 32
-        print("camera shape:",x["camera_feature"].shape)
-        # print("lidar shape:",x["lidar_feature"].shape)
-        print("status shape:",x["status_feature"].shape)
-        # 展平除第一维度以外的所有维度
-        flattened_camera = x['camera_feature'].view(x['camera_feature'].size(0), -1)
-        # flattened_lidar = x['lidar_feature'].view(x['lidar_feature'].size(0), -1)
-        flattened_status = x['status_feature'].view(x['status_feature'].size(0), -1)
-        x = torch.cat((flattened_camera,  flattened_status), dim=1)
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        return x
+        # 处理 camera_feature
+        camera = self.conv1(x['camera_feature'])
+        camera = self.pool(camera)
+        camera = F.relu(camera)
+        flattened_camera = camera.view(camera.size(0), -1)
+        output_camera = self.fc_camera(flattened_camera)
+
+        # 处理 status_feature
+        status = x['status_feature']
+        output_status = self.fc_status(status)
+
+        return output_camera, output_status
     def output_shape(self):
         return self.output_shape
 @dataclass
@@ -60,8 +66,8 @@ class DPConfig:
     obs_as_global_cond=True
     shape_meta={"action": {"shape": (3,)}}  
     obs_encoder=MLPEncoder(
-        input_dim=256*1024*3+8,          # 从配置的 feature_dim 字段
-        hidden_dim=(int)(256*1024*3*1.5),         # 自定义隐藏层维度
+        input_dim=8,          # 从配置的 feature_dim 字段
+        #hidden_dim=(int)(feature_dim*1.5),         # 自定义隐藏层维度
         output_dim=feature_dim      # 输入历史长度乘以特征维度
     )
     

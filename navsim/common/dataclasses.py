@@ -387,7 +387,7 @@ class Scene:
             num_future_frames=num_future_frames,
         )
         map_api = cls._build_map_api(scene_metadata.map_name)
-        print("len of iteration:",len(scene_dict_list))
+        # print("len of iteration:",len(scene_dict_list))
         frames: List[Frame] = []
         for frame_idx in range(len(scene_dict_list)):
             global_ego_status = cls._build_ego_status(scene_dict_list[frame_idx])

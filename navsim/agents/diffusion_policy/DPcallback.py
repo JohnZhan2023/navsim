@@ -97,8 +97,8 @@ class DPCallback(pl.Callback):
         targets: Dict[str, torch.Tensor],
         predictions: Dict[str, torch.Tensor],
     ) -> torch.Tensor:
-
-        camera = features["camera_feature"].permute(0, 2, 3, 1).numpy()
+        print("visualizing model",features["camera_feature"].shape)
+        camera = features["camera_feature"].permute(0, 1, 3, 4, 2).numpy()
         bev = targets["bev_semantic_map"].numpy()
         lidar_map = features["lidar_feature"].squeeze(1).numpy()
         agent_labels = targets["agent_labels"].numpy()

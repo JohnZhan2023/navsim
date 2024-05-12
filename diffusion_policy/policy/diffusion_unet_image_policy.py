@@ -127,7 +127,7 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
         """
         assert 'past_action' not in obs_dict # not implemented yet
         # normalize input
-        print(obs_dict.keys())
+        # print(obs_dict.keys())
         self.normalizer.fit(obs_dict)
         nobs = self.normalizer.normalize(obs_dict)
         value = next(iter(nobs.values()))
@@ -147,7 +147,7 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
         if self.obs_as_global_cond:
             # condition through global feature
             this_nobs = dict_apply(nobs, lambda x: x[:,:To,...].reshape(-1,*x.shape[2:]))
-            nobs_features = self.obs_encoder(this_nobs)
+            nobs_features,_ = self.obs_encoder(this_nobs)
             # reshape back to B, Do
             global_cond = nobs_features.reshape(B, -1)
             # empty data for action
@@ -174,8 +174,8 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
         
         # unnormalize prediction
         naction_pred = nsample[...,:Da]
-        action_pred = self.normalizer['action'].unnormalize(naction_pred)
-
+        # action_pred = self.normalizer['action'].unnormalize(naction_pred)
+        action_pred = naction_pred
         # get action
         #为了保证Unet可以downsampling实际会输出一个更长的horizon
         start = To - 1
@@ -183,8 +183,8 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
         action = action_pred[:,start:end]
         
         result = {
-            'action': action,
-            'action_pred': action_pred
+            'trajectory': action,
+            # 'action_pred': action_pred
         }
         return result
 

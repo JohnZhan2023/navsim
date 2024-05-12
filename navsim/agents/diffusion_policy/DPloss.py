@@ -16,7 +16,8 @@ def dp_loss(
     :param config: global Diffusion Policy config
     :return: combined loss value
     """
-
+    # print("the size of predictions",predictions["trajectory"].shape)
+    # print("the size of tagets",targets["trajectory"].shape)
     trajectory_loss = F.l1_loss(predictions["trajectory"], targets["trajectory"])
     
     return trajectory_loss

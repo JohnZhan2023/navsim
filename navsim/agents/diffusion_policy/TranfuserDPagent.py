@@ -29,6 +29,7 @@ from diffusion_policy.policy.diffusion_unet_image_policy import DiffusionUnetIma
 
 
 class DPAgent(AbstractAgent):
+    '''we add the transfuser to change the first vision photo to the bev view'''
     
     def __init__(
         self,
@@ -48,6 +49,7 @@ class DPAgent(AbstractAgent):
             n_action_steps=config.n_action_steps,
             n_obs_steps=config.n_obs_steps,
         )
+        self.b
         print("initializing human agent...")
 
     def name(self) -> str:

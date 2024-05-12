@@ -56,8 +56,8 @@ class DPFeatureBuilder(AbstractFeatureBuilder):
         """
         reuslt = []
         for cameras in agent_input.cameras:
-            print(len(agent_input.cameras))
-            print(agent_input.cameras[-1].cam_b0.image.shape)
+            # print(len(agent_input.cameras))
+            # print(agent_input.cameras[-1].cam_b0.image.shape)
             # Crop to ensure 4:1 aspect ratio
             l0 = cameras.cam_l0.image[28:-28, 416:-416]
             l1 = cameras.cam_l1.image[28:-28, 416:-416]
@@ -73,7 +73,7 @@ class DPFeatureBuilder(AbstractFeatureBuilder):
             tensor_image = transforms.ToTensor()(resized_image)
             reuslt.append(tensor_image)
         result= torch.stack(reuslt, dim=0) 
-        print("result shape",result.shape)
+        # print("result shape",result.shape)
         return result
 
     # def _get_lidar_feature(self, agent_input: AgentInput) -> torch.Tensor:

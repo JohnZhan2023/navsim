@@ -124,7 +124,6 @@ class Dataset(torch.utils.data.Dataset):
         self._valid_cache_paths: Dict[str, Path] = self._load_valid_caches(
             self._cache_path, feature_builders, target_builders
         )
-        print("valid_cache_paths: ", self._cache_path)
         if self._cache_path is not None:
             self.cache_dataset()
 
