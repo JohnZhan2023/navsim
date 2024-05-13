@@ -98,16 +98,17 @@ class DPCallback(pl.Callback):
         predictions: Dict[str, torch.Tensor],
     ) -> torch.Tensor:
         print("visualizing model",features["camera_feature"].shape)
-        camera = features["camera_feature"].permute(0, 1, 3, 4, 2).numpy()
-        bev = targets["bev_semantic_map"].numpy()
+        sliced_tensor = features["camera_feature"][:, 1, :, :, :].squeeze(1)
+        camera =sliced_tensor.permute(0,  2, 3, 1).numpy()
+        #bev = targets["bev_semantic_map"].numpy()
         lidar_map = features["lidar_feature"].squeeze(1).numpy()
         agent_labels = targets["agent_labels"].numpy()
         agent_states = targets["agent_states"].numpy()
         trajectory = targets["trajectory"].numpy()
 
-        pred_bev = predictions["bev_semantic_map"].argmax(1).numpy()
-        pred_agent_labels = predictions["agent_labels"].sigmoid().numpy()
-        pred_agent_states = predictions["agent_states"].numpy()
+        #pred_bev = predictions["bev_semantic_map"].argmax(1).numpy()
+        # pred_agent_labels = predictions["agent_labels"].sigmoid().numpy()
+        # pred_agent_states = predictions["agent_states"].numpy()
         pred_trajectory = predictions["trajectory"].numpy()
 
         plots = []
@@ -115,11 +116,13 @@ class DPCallback(pl.Callback):
             plot = np.zeros((256, 768, 3), dtype=np.uint8)
             plot[:128, :512] = (camera[sample_idx] * 255).astype(np.uint8)[::2, ::2]
 
-            plot[128:, :256] = semantic_map_to_rgb(bev[sample_idx], self._config)
-            plot[128:, 256:512] = semantic_map_to_rgb(pred_bev[sample_idx], self._config)
+            # plot[128:, :256] = semantic_map_to_rgb(bev[sample_idx], self._config)
+            # plot[128:, 256:512] = semantic_map_to_rgb(pred_bev[sample_idx], self._config)
 
-            agent_states_ = agent_states[sample_idx][agent_labels[sample_idx]]
-            pred_agent_states_ = pred_agent_states[sample_idx][pred_agent_labels[sample_idx] > 0.5]
+            # agent_states_ = agent_states[sample_idx][agent_labels[sample_idx]]
+            agent_states_=None
+            # pred_agent_states_ = pred_agent_states[sample_idx][pred_agent_labels[sample_idx] > 0.5]
+            pred_agent_states_=None
             plot[:, 512:] = lidar_map_to_rgb(
                 lidar_map[sample_idx],
                 agent_states_,
@@ -187,20 +190,20 @@ def lidar_map_to_rgb(
     rgb_map = (lidar_map * 255).astype(np.uint8)
     rgb_map = 255 - rgb_map[..., None].repeat(3, axis=-1)
 
-    for color, agent_state_array in zip(
-        [gt_color, pred_color], [agent_states, pred_agent_states]
-    ):
-        for agent_state in agent_state_array:
-            agent_box = OrientedBox(
-                StateSE2(*agent_state[BoundingBox2DIndex.STATE_SE2]),
-                agent_state[BoundingBox2DIndex.LENGTH],
-                agent_state[BoundingBox2DIndex.WIDTH],
-                1.0,
-            )
-            exterior = np.array(agent_box.geometry.exterior.coords).reshape((-1, 1, 2))
-            exterior = coords_to_pixel(exterior)
-            exterior = np.flip(exterior, axis=-1)
-            cv2.polylines(rgb_map, [exterior], isClosed=True, color=color, thickness=2)
+    # for color, agent_state_array in zip(
+    #     [gt_color, pred_color], [agent_states, pred_agent_states]
+    # ):
+    #     for agent_state in agent_state_array:
+    #         agent_box = OrientedBox(
+    #             StateSE2(*agent_state[BoundingBox2DIndex.STATE_SE2]),
+    #             agent_state[BoundingBox2DIndex.LENGTH],
+    #             agent_state[BoundingBox2DIndex.WIDTH],
+    #             1.0,
+    #         )
+    #         exterior = np.array(agent_box.geometry.exterior.coords).reshape((-1, 1, 2))
+    #         exterior = coords_to_pixel(exterior)
+    #         exterior = np.flip(exterior, axis=-1)
+    #         cv2.polylines(rgb_map, [exterior], isClosed=True, color=color, thickness=2)
             
     for color, traj in zip(
         [gt_color, pred_color], [trajectory, pred_trajectory]
