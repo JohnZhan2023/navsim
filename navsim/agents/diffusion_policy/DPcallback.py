@@ -97,11 +97,11 @@ class DPCallback(pl.Callback):
         targets: Dict[str, torch.Tensor],
         predictions: Dict[str, torch.Tensor],
     ) -> torch.Tensor:
-        print("visualizing model",features["camera_feature"].shape)
+        # print("visualizing model",features["camera_feature"].shape)
         sliced_tensor = features["camera_feature"][:, 1, :, :, :].squeeze(1)
         camera =sliced_tensor.permute(0,  2, 3, 1).numpy()
         #bev = targets["bev_semantic_map"].numpy()
-        lidar_map = features["lidar_feature"].squeeze(1).numpy()
+        lidar_map = features["lidar_feature"][:, -1, :, :, :].squeeze(1).numpy()
         agent_labels = targets["agent_labels"].numpy()
         agent_states = targets["agent_states"].numpy()
         trajectory = targets["trajectory"].numpy()
@@ -179,7 +179,6 @@ def lidar_map_to_rgb(
 
     gt_color, pred_color = (0, 255, 0), (255, 0, 0)
     point_size = 4
-
     height, width = lidar_map.shape[:2]
 
     def coords_to_pixel(coords):
@@ -189,6 +188,7 @@ def lidar_map_to_rgb(
 
     rgb_map = (lidar_map * 255).astype(np.uint8)
     rgb_map = 255 - rgb_map[..., None].repeat(3, axis=-1)
+
 
     # for color, agent_state_array in zip(
     #     [gt_color, pred_color], [agent_states, pred_agent_states]

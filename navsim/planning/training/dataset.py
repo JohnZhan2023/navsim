@@ -231,6 +231,7 @@ class Dataset(torch.utils.data.Dataset):
             agent_input = scene.get_agent_input()
             for builder in self._feature_builders:
                 features.update(builder.compute_features(agent_input))
+
             for builder in self._target_builders:
                 targets.update(builder.compute_targets(scene))
 

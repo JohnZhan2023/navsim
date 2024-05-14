@@ -34,10 +34,11 @@ class DPFeatureBuilder(AbstractFeatureBuilder):
 
     def compute_features(self, agent_input: AgentInput) -> Dict[str, torch.Tensor]:
         """Inherited, see superclass."""
-        print("we calculate the features!!!!!!!!!!!!!!!!!")
+
         features = {}
         features["camera_feature"] = self._get_camera_feature(agent_input)
         features["lidar_feature"] = self._get_lidar_feature(agent_input)
+
         features["status_feature"] = torch.concatenate(
             [
                 torch.tensor(agent_input.ego_statuses[-1].driving_command, dtype=torch.float32),
@@ -78,50 +79,49 @@ class DPFeatureBuilder(AbstractFeatureBuilder):
 
     def _get_lidar_feature(self, agent_input: AgentInput) -> torch.Tensor:
         """
-        Compute LiDAR feature as 2D histogram, according to Transfuser
+        Compute LiDAR feature as 2D histogram for all Lidars, according to Transfuser
         :param agent_input: input dataclass
-        :return: LiDAR histogram as torch tensors
+        :return: LiDAR histogram as torch tensors with an additional dimension for each Lidar
         """
 
-        # only consider (x,y,z) & swap axes for (N,3) numpy array
-        lidar_pc = agent_input.lidars[-1].lidar_pc[LidarIndex.POSITION].T
-
-        # NOTE: Code from
-        # https://github.com/autonomousvision/carla_garage/blob/main/team_code/data.py#L873
         def splat_points(point_cloud):
             # 256 x 256 grid
             xbins = np.linspace(
                 self._config.lidar_min_x,
                 self._config.lidar_max_x,
-                (self._config.lidar_max_x - self._config.lidar_min_x)
-                * int(self._config.pixels_per_meter)
-                + 1,
+                (self._config.lidar_max_x - self._config.lidar_min_x) * int(self._config.pixels_per_meter) + 1,
             )
             ybins = np.linspace(
                 self._config.lidar_min_y,
                 self._config.lidar_max_y,
-                (self._config.lidar_max_y - self._config.lidar_min_y)
-                * int(self._config.pixels_per_meter)
-                + 1,
+                (self._config.lidar_max_y - self._config.lidar_min_y) * int(self._config.pixels_per_meter) + 1,
             )
             hist = np.histogramdd(point_cloud[:, :2], bins=(xbins, ybins))[0]
             hist[hist > self._config.hist_max_per_pixel] = self._config.hist_max_per_pixel
             overhead_splat = hist / self._config.hist_max_per_pixel
             return overhead_splat
 
-        # Remove points above the vehicle
-        lidar_pc = lidar_pc[lidar_pc[..., 2] < self._config.max_height_lidar]
-        below = lidar_pc[lidar_pc[..., 2] <= self._config.lidar_split_height]
-        above = lidar_pc[lidar_pc[..., 2] > self._config.lidar_split_height]
-        above_features = splat_points(above)
-        if self._config.use_ground_plane:
-            below_features = splat_points(below)
-            features = np.stack([below_features, above_features], axis=-1)
-        else:
-            features = np.stack([above_features], axis=-1)
-        features = np.transpose(features, (2, 0, 1)).astype(np.float32)
+        features_list = []
+        for lidar in agent_input.lidars:
+            # only consider (x,y,z) & swap axes for (N,3) numpy array
+            lidar_pc = lidar.lidar_pc[LidarIndex.POSITION].T
+            # Remove points above the vehicle
+            lidar_pc = lidar_pc[lidar_pc[..., 2] < self._config.max_height_lidar]
+            below = lidar_pc[lidar_pc[..., 2] <= self._config.lidar_split_height]
+            above = lidar_pc[lidar_pc[..., 2] > self._config.lidar_split_height]
+            above_features = splat_points(above)
+            if self._config.use_ground_plane:
+                below_features = splat_points(below)
+                features = np.stack([below_features, above_features], axis=-1)
+            else:
+                features = np.stack([above_features], axis=-1)
+            features = np.transpose(features, (2, 0, 1)).astype(np.float32)
+            features_list.append(torch.tensor(features))
+        
+        # Stack all lidar features along a new dimension
+        stacked_features = torch.stack(features_list, dim=0)
+        return stacked_features
 
-        return torch.tensor(features)
     
     
     

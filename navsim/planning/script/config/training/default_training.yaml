@@ -20,14 +20,14 @@ force_cache_computation: false
 
 dataloader:
   params:
-    batch_size: 12  # number of samples per batch
+    batch_size: 8  # number of samples per batch
     num_workers: 4  # number of workers for data loading
     pin_memory: true  # pin memory for faster GPU transfer
     prefetch_factor: 2  # number of samples loaded in advance by each worker
 
 trainer:
   params:
-    max_epochs: 20  # maximum number of training epochs
+    max_epochs: 100  # maximum number of training epochs
     check_val_every_n_epoch: 1  # run validation set every n training epochs
     val_check_interval: 1.0  # [%] run validation set every X% of training set
 

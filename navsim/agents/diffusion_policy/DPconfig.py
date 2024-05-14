@@ -6,7 +6,7 @@ from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
 from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from navsim.agents.diffusion_policy.DPencoder import TranfuserEncoder
-
+from navsim.agents.transfuser.transfuser_config import TransfuserConfig
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -65,11 +65,13 @@ class DPConfig:
     feature_dim=256
     obs_as_global_cond=True
     shape_meta={"action": {"shape": (3,)}}  
-    obs_encoder=MLPEncoder(
-        input_dim=8,          # 从配置的 feature_dim 字段
-        #hidden_dim=(int)(feature_dim*1.5),         # 自定义隐藏层维度
-        output_dim=feature_dim      # 输入历史长度乘以特征维度
-    )
+    # obs_encoder=MLPEncoder(
+    #     input_dim=8,          # 从配置的 feature_dim 字段
+    #     #hidden_dim=(int)(feature_dim*1.5),         # 自定义隐藏层维度
+    #     output_dim=feature_dim      # 输入历史长度乘以特征维度
+    # )
+    obs_encoder=TranfuserEncoder(feature_dim,TransfuserConfig)
+    
     
     
     

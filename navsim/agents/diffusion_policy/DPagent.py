@@ -48,11 +48,11 @@ class DPAgent(AbstractAgent):
             n_action_steps=config.n_action_steps,
             n_obs_steps=config.n_obs_steps,
         )
-        print("initializing human agent...")
+        #print("initializing human agent...")
 
     def name(self) -> str:
         """Inherited, see superclass."""
-        print("we realize the human agent")
+        #print("we realize the human agent")
         return self.__class__.__name__
 
     def initialize(self) -> None:

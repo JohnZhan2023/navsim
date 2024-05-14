@@ -148,7 +148,9 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
             # condition through global feature
             # print("shape of feature",nobs["camera_feature"].shape)
             this_nobs = dict_apply(nobs, lambda x: x[:,:To,...].reshape(-1,*x.shape[2:]))
-            nobs_features,_ = self.obs_encoder(this_nobs)
+            # print(this_nobs["lidar_feature"].shape)
+            # this_nobs['lidar_feature']=this_nobs['lidar_feature'].unsqueeze(1)
+            nobs_features = self.obs_encoder(this_nobs)
             # reshape back to B, Do
             global_cond = nobs_features.reshape(B, -1)
             # empty data for action

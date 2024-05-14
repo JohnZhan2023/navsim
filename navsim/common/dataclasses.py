@@ -324,6 +324,7 @@ class Scene:
             )
             cameras.append(self.frames[frame_idx].cameras)
             lidars.append(self.frames[frame_idx].lidar)
+        #print("the len of lidar:",len(lidars))
 
         return AgentInput(ego_statuses, cameras, lidars)
 
@@ -389,6 +390,7 @@ class Scene:
         map_api = cls._build_map_api(scene_metadata.map_name)
         # print("len of iteration:",len(scene_dict_list))
         frames: List[Frame] = []
+
         for frame_idx in range(len(scene_dict_list)):
             global_ego_status = cls._build_ego_status(scene_dict_list[frame_idx])
             annotations = cls._build_annotations(scene_dict_list[frame_idx])

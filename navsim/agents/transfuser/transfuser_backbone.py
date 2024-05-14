@@ -211,8 +211,11 @@ class TransfuserBackbone(nn.Module):
         :param features: Input features
         :return: Processed features
         """
+        # print(features.shape)
         for name, module in layers:
+            # print("the shape is:",features.shape)
             features = module(features)
+  
             if name in return_layers:
                 break
         return features
@@ -314,7 +317,8 @@ class GPT(nn.Module):
             image_tensor (tensor): B*4*seq_len, C, H, W
             lidar_tensor (tensor): B*seq_len, C, H, W
         """
-
+        # print("lidar tensor shape",lidar_tensor.shape)
+        # print("image tensor shape",image_tensor.shape)
         bz = lidar_tensor.shape[0]
         lidar_h, lidar_w = lidar_tensor.shape[2:4]
 
@@ -325,7 +329,8 @@ class GPT(nn.Module):
         lidar_tensor = lidar_tensor.permute(0, 2, 3, 1).contiguous().view(bz, -1, self.n_embd)
 
         token_embeddings = torch.cat((image_tensor, lidar_tensor), dim=1)
-
+        # print("token_embeddings shape",token_embeddings.shape)
+        # print("pos_emb shape",self.pos_emb.shape)
         x = self.drop(self.pos_emb + token_embeddings)
         x = self.blocks(x)  # (B, an * T, C)
         x = self.ln_f(x)  # (B, an * T, C)
