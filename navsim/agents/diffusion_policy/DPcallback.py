@@ -110,7 +110,8 @@ class DPCallback(pl.Callback):
         # pred_agent_labels = predictions["agent_labels"].sigmoid().numpy()
         # pred_agent_states = predictions["agent_states"].numpy()
         pred_trajectory = predictions["trajectory"].numpy()
-
+        print("gt traj:",trajectory[0])
+        print("pred traj:",pred_trajectory[0])
         plots = []
         for sample_idx in range(self._num_rows * self._num_columns):
             plot = np.zeros((256, 768, 3), dtype=np.uint8)
@@ -140,8 +141,14 @@ class DPCallback(pl.Callback):
 def dict_to_device(
     dict: Dict[str, torch.Tensor], device: Union[torch.device, str]
 ) -> Dict[str, torch.Tensor]:
+
+    
     for key in dict.keys():
-        dict[key] = dict[key].to(device)
+        try:
+            dict[key] = dict[key].to(device)
+        except:
+            dict[key]=torch.stack(dict[key],dim=0).to(device)
+            dict[key]=torch.transpose(dict[key],0,1)
     return dict
 
 
@@ -178,7 +185,7 @@ def lidar_map_to_rgb(
 ) -> npt.NDArray[np.uint8]:
 
     gt_color, pred_color = (0, 255, 0), (255, 0, 0)
-    point_size = 4
+    point_size = 2
     height, width = lidar_map.shape[:2]
 
     def coords_to_pixel(coords):

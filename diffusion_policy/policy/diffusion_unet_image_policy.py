@@ -98,7 +98,7 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
     
         # set step values
         scheduler.set_timesteps(self.num_inference_steps)
-
+        print("sample traj:",trajectory[0])
         for t in scheduler.timesteps:
             # 1. apply conditioning
             trajectory[condition_mask] = condition_data[condition_mask]
@@ -106,7 +106,7 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
             # 2. predict model output
             model_output = model(trajectory, t, 
                 local_cond=local_cond, global_cond=global_cond)
-
+            #print("the predicted noise:",model_output[0])
             # 3. compute previous image: x_t -> x_t-1
             trajectory = scheduler.step(
                 model_output, t, trajectory, 
@@ -115,7 +115,8 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
                 ).prev_sample
         
         # finally make sure conditioning is enforced
-        trajectory[condition_mask] = condition_data[condition_mask]        
+        trajectory[condition_mask] = condition_data[condition_mask]  
+        # print("the original traj:",trajectory[0])      
 
         return trajectory
 
@@ -130,7 +131,9 @@ class DiffusionUnetImagePolicy(BaseImagePolicy):
         # print(obs_dict.keys())
         self.normalizer.fit(obs_dict)
         nobs = self.normalizer.normalize(obs_dict)
+        
         value = next(iter(nobs.values()))
+        nobs=obs_dict
         B, To = value.shape[:2]
         T = self.horizon
         Da = self.action_dim

@@ -14,7 +14,7 @@ defaults:
   - agent: ego_status_mlp_agent
 
 split: mini
-cache_path: ${oc.env:NAVSIM_EXP_ROOT}/training_cache
+cache_path: ${oc.env:NAVSIM_EXP_ROOT}/training_cache_mini
 use_cache_without_dataset: false # load the training samples from the cache. scene-filter will be ignored
 force_cache_computation: false
 
@@ -27,7 +27,7 @@ dataloader:
 
 trainer:
   params:
-    max_epochs: 100  # maximum number of training epochs
+    max_epochs: 50  # maximum number of training epochs
     check_val_every_n_epoch: 1  # run validation set every n training epochs
     val_check_interval: 1.0  # [%] run validation set every X% of training set
 

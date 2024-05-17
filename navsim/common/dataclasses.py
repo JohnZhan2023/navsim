@@ -310,7 +310,7 @@ class Scene:
         ego_statuses: List[EgoStatus] = []
         cameras: List[Cameras] = []
         lidars: List[Lidar] = []
-
+        print("the len of frames:",len(self.frames))
         for frame_idx in range(self.scene_metadata.num_history_frames):
             frame_ego_status = self.frames[frame_idx].ego_status
 
@@ -322,6 +322,7 @@ class Scene:
                     driving_command=frame_ego_status.driving_command,
                 )
             )
+            print("the pose is :",local_ego_poses[frame_idx])
             cameras.append(self.frames[frame_idx].cameras)
             lidars.append(self.frames[frame_idx].lidar)
         #print("the len of lidar:",len(lidars))

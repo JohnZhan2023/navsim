@@ -40,12 +40,19 @@ class DPFeatureBuilder(AbstractFeatureBuilder):
         features["lidar_feature"] = self._get_lidar_feature(agent_input)
 
         features["status_feature"] = torch.concatenate(
-            [
+            [   
                 torch.tensor(agent_input.ego_statuses[-1].driving_command, dtype=torch.float32),
                 torch.tensor(agent_input.ego_statuses[-1].ego_velocity, dtype=torch.float32),
                 torch.tensor(agent_input.ego_statuses[-1].ego_acceleration, dtype=torch.float32),
             ],
         )
+        features["past_trajectory"]=[
+            torch.tensor(agent_input.ego_statuses[-4].ego_pose, dtype=torch.float32),
+            torch.tensor(agent_input.ego_statuses[-3].ego_pose, dtype=torch.float32),
+            torch.tensor(agent_input.ego_statuses[-2].ego_pose, dtype=torch.float32),
+            torch.tensor(agent_input.ego_statuses[-1].ego_pose, dtype=torch.float32),
+        ]
+        print("features shape",features["past_trajectory"][0].shape)
 
         return features
 

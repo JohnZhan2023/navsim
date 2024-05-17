@@ -48,7 +48,12 @@ class DPConfig:
     trajectory_sampling: TrajectorySampling = TrajectorySampling(
         time_horizon=4, interval_length=0.5
     )
-
+    obs_as_global_condition=True
+    diffusion_step_embed_dim=256
+    down_dims=(256,512,1024)
+    kernel_size=5
+    n_groups=8
+    cond_predict_scale=True
     input_history=[0,1,2,3]
     output_length=8
     action_dim=3

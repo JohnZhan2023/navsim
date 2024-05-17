@@ -26,8 +26,8 @@ logger_format_string: null
 max_number_of_workers: null
 gpu: true
 experiment_name: training_dp_agent
-navsim_log_path: /cephfs/zhanjh/openscene-v1.1/navsim_logs/${split}
-sensor_blobs_path: /cephfs/zhanjh/openscene-v1.1/sensor_blobs/${split}
+navsim_log_path: /cephfs/zhanjh/openscene_v1.1/navsim_logs/${split}
+sensor_blobs_path: /cephfs/zhanjh/openscene_v1.1/sensor_blobs/${split}
 date_format: '%Y.%m.%d.%H.%M.%S'
 experiment_uid: ${now:${date_format}}
 output_dir: /cephfs/zhanjh/exp/${experiment_name}/${experiment_uid}
@@ -15957,8 +15957,8 @@ agent:
       interval_length: 0.5
   checkpoint_path: null
   lr: 0.0001
-cache_path: /cephfs/zhanjh/exp/training_cache
-use_cache_without_dataset: false
+cache_path: /cephfs/zhanjh/exp/train_tmp_cache
+use_cache_without_dataset: true
 force_cache_computation: false
 dataloader:
   params:

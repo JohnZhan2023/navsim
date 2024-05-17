@@ -12,4 +12,4 @@ config:
     interval_length: 0.5
 
 checkpoint_path: null
-lr: 1e-4
+lr: 1e-2

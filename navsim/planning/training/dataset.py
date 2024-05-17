@@ -197,6 +197,7 @@ class Dataset(torch.utils.data.Dataset):
         if self._force_cache_computation:
             tokens_to_cache = self._scene_loader.tokens
         else:
+            logger.error("now let's begin to cache again!")
             tokens_to_cache = set(self._scene_loader.tokens) - set(self._valid_cache_paths.keys())
             tokens_to_cache = list(tokens_to_cache)
             logger.info(
@@ -208,7 +209,13 @@ class Dataset(torch.utils.data.Dataset):
             )
 
         for token in tqdm(tokens_to_cache, desc="Caching Dataset"):
-            self._cache_scene_with_token(token)
+            try:
+                self._cache_scene_with_token(token)
+                logger.error(f"Successfully loading token {token}")
+            except Exception as e:
+                logger.error(f"Failed to load token {token} {e}")
+                
+
 
     def __len__(self):
         return len(self._scene_loader)

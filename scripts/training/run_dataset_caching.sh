@@ -5,3 +5,4 @@ split=$SPLIT \
 cache_path=/cephfs/zhanjh/exp/train_tmp_cache \
 agent=DPagent \
 experiment_name=training_dp_agent \
+force_cache_computation=True \
