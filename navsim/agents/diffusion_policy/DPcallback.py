@@ -110,8 +110,7 @@ class DPCallback(pl.Callback):
         # pred_agent_labels = predictions["agent_labels"].sigmoid().numpy()
         # pred_agent_states = predictions["agent_states"].numpy()
         pred_trajectory = predictions["trajectory"].numpy()
-        print("gt traj:",trajectory[0])
-        print("pred traj:",pred_trajectory[0])
+
         plots = []
         for sample_idx in range(self._num_rows * self._num_columns):
             plot = np.zeros((256, 768, 3), dtype=np.uint8)
@@ -141,14 +140,12 @@ class DPCallback(pl.Callback):
 def dict_to_device(
     dict: Dict[str, torch.Tensor], device: Union[torch.device, str]
 ) -> Dict[str, torch.Tensor]:
-
     
     for key in dict.keys():
-        try:
-            dict[key] = dict[key].to(device)
-        except:
-            dict[key]=torch.stack(dict[key],dim=0).to(device)
-            dict[key]=torch.transpose(dict[key],0,1)
+
+        dict[key] = dict[key].to(device)
+
+
     return dict
 
 
@@ -211,12 +208,23 @@ def lidar_map_to_rgb(
     #         exterior = coords_to_pixel(exterior)
     #         exterior = np.flip(exterior, axis=-1)
     #         cv2.polylines(rgb_map, [exterior], isClosed=True, color=color, thickness=2)
-            
-    for color, traj in zip(
-        [gt_color, pred_color], [trajectory, pred_trajectory]
-    ):
-        trajectory_indices = coords_to_pixel(traj[:,:2])
-        for x, y in trajectory_indices:
-            cv2.circle(rgb_map, (y, x), point_size, color, -1)  # -1 fills the circle
+    for color, traj in zip([gt_color, pred_color], [trajectory, pred_trajectory]):
+        trajectory_indices = coords_to_pixel(traj[:, :2])
+        for idx, (x, y) in enumerate(trajectory_indices):
+            # 画圆
+            if idx!=0:
+                cv2.circle(rgb_map, (y, x), point_size, color, -1)
+            else:
+                cv2.circle(rgb_map, (y, x), point_size, (255, 0, 255), -1)
+
+            # 在圆圈旁边添加序号
+            text_position = (y + point_size, x)  # 根据需要调整位置
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.5  # 字体大小
+            font_color = (255, 255, 255)  # 字体颜色，白色
+            font_thickness = 1  # 字体厚度
+
+            # 在图像上添加文本
+            cv2.putText(rgb_map, str(idx), text_position, font, font_scale, font_color, font_thickness)
 
     return rgb_map[::-1, ::-1]

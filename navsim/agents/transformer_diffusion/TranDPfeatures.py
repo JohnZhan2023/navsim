@@ -54,6 +54,8 @@ class DPFeatureBuilder(AbstractFeatureBuilder):
         ]
         features["past_trajectory"]=torch.stack(features["past_trajectory"],dim=1)
         features["past_trajectory"]=torch.transpose(features["past_trajectory"],0,1)
+        print("past_trajectory shape",features["past_trajectory"].shape)
+
         return features
 
     def _get_camera_feature(self, agent_input: AgentInput) -> torch.Tensor:

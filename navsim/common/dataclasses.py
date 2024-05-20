@@ -322,7 +322,6 @@ class Scene:
                     driving_command=frame_ego_status.driving_command,
                 )
             )
-            print("the pose is :",local_ego_poses[frame_idx])
             cameras.append(self.frames[frame_idx].cameras)
             lidars.append(self.frames[frame_idx].lidar)
         #print("the len of lidar:",len(lidars))

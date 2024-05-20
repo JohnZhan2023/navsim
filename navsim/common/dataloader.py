@@ -35,19 +35,21 @@ def filter_scenes(data_path: Path, scene_filter: SceneFilter) -> Dict[str, List[
         filter_tokens = False
 
     for log_pickle_path in tqdm(log_files, desc="Loading logs"):
-
         scene_dict_list = pickle.load(open(log_pickle_path, "rb"))
+        
         for frame_list in split_list(
             scene_dict_list, scene_filter.num_frames, scene_filter.frame_interval
         ):
+
+
             # Filter scenes which are too short
             if len(frame_list) < scene_filter.num_frames:
                 continue
 
-            # Filter scenes with no route
+            #Filter scenes with no route
             if (
                 scene_filter.has_route
-                and len(frame_list[scene_filter.num_history_frames - 1]["roadblock_ids"]) == 0
+                and((frame_list[scene_filter.num_history_frames - 1]["roadblock_ids"]==None)or( len(frame_list[scene_filter.num_history_frames - 1]["roadblock_ids"]) == 0))
             ):
                 continue
 
@@ -57,6 +59,7 @@ def filter_scenes(data_path: Path, scene_filter: SceneFilter) -> Dict[str, List[
                 continue
 
             filtered_scenes[token] = frame_list
+
 
             if (scene_filter.max_scenes is not None) and (
                 len(filtered_scenes) >= scene_filter.max_scenes

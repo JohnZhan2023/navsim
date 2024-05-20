@@ -90,7 +90,8 @@ class LowdimMaskGenerator(ModuleAttrMixin):
         # generate action mask
         if self.action_visible:
             action_steps = torch.maximum(
-                obs_steps - 1, 
+                #I change this to be obs_steps instead of obs_steps - 1
+                obs_steps , 
                 torch.tensor(0,
                     dtype=obs_steps.dtype, 
                     device=obs_steps.device))

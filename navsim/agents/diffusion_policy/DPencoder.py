@@ -2,9 +2,11 @@ from typing import Dict
 import numpy as np
 import torch
 import torch.nn as nn
+import math
 
 from navsim.agents.transfuser.transfuser_config import TransfuserConfig
 from navsim.agents.transfuser.transfuser_backbone import TransfuserBackbone
+
 
 class TranfuserEncoder(nn.Module):
     def __init__(self,feature_dim,config: TransfuserConfig):

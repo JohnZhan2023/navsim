@@ -1,4 +1,4 @@
-SPLIT=trainval
+SPLIT=private_test_e2e
 
 python $NAVSIM_DEVKIT_ROOT/navsim/planning/script/run_metric_caching.py \
 split=$SPLIT \

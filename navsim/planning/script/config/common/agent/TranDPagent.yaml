@@ -1,8 +1,8 @@
-_target_: navsim.agents.transfuser.transfuser_agent.TransfuserAgent
+_target_: navsim.agents.transformer_diffusion.TranDPagent.TranDPagent
 _convert_: 'all'
 
 config:
-  _target_: navsim.agents.transfuser.transfuser_config.TransfuserConfig
+  _target_: navsim.agents.transformer_diffusion.TranDPconfig.TranDPConfig
   _convert_: 'all'
 
   trajectory_sampling:

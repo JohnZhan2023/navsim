@@ -3,6 +3,8 @@ import torch
 from typing import Dict
 
 import numpy as np
+import math
+import torch.nn as nn
 import cv2
 from torchvision import transforms
 from torch.optim import Optimizer
@@ -34,6 +36,44 @@ from diffusion_policy.policy.diffusion_unet_image_policy import DiffusionUnetIma
 from diffusion_policy.model.diffusion.mask_generator import LowdimMaskGenerator
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 from diffusion_policy.common.pytorch_util import dict_apply
+
+
+class SinusoidalPosEmb(nn.Module):
+    """
+    Sin positional embedding, where the noisy time step are encoded as an pos embedding.
+    """
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, x):
+        device = x.device
+        half_dim = self.dim // 2
+        emb = math.log(10000) / (half_dim - 1)
+        emb = torch.exp(torch.arange(half_dim, device=device) * -emb)
+        emb = x[:, None] * emb[None, :]
+        emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
+        return emb
+def uniform_positional_embedding(key_point_num, feat_dim):
+    point_num = key_point_num
+    position = torch.tensor([[6 * (point_num - i)] for i in range(point_num)])
+
+    # Create a table of divisors for the even indices
+    div_term = torch.exp(torch.arange(0, (feat_dim // 2) + (feat_dim % 2), dtype=torch.float32) * (-math.log(100.0) / max((feat_dim // 2) - 1, 1)))
+
+    # Generate the positional encodings
+    pos_embedding = torch.zeros((point_num, feat_dim))
+    pos_embedding[:, 0::2] = torch.sin(position * div_term[:feat_dim // 2 + feat_dim % 2])
+
+    if feat_dim % 2 == 0:
+        pos_embedding[:, 1::2] = torch.cos(position * div_term[:feat_dim // 2])
+    else:
+        # For odd feat_dim, apply cosine to all but the last one which uses sine
+        pos_embedding[:, 1::2] = torch.cos(position * div_term[:-1])
+
+    return pos_embedding
+
+
 class DPAgent(AbstractAgent):
     
     def __init__(
@@ -66,6 +106,10 @@ class DPAgent(AbstractAgent):
             cond_predict_scale=config.cond_predict_scale,
             
         )
+        # position_embedding = uniform_positional_embedding(config.n_obs_steps, config.feature_dim).unsqueeze(0)
+        # self.position_embedding = torch.nn.Parameter(position_embedding, requires_grad=True)
+        # traj_position_embedding = uniform_positional_embedding(config.horizon, config.action_dim).unsqueeze(0)
+        # self.traj_position_embedding = torch.nn.Parameter(traj_position_embedding, requires_grad=True)
         self.model=model
         self.obs_encoder=config.obs_encoder
         self.noise_scheduler = config.noise_scheduler
@@ -74,7 +118,7 @@ class DPAgent(AbstractAgent):
             obs_dim=0 if config.obs_as_global_condition else obs_feature_dim,
             max_n_obs_steps=config.n_obs_steps,
             fix_obs_steps=True,
-            action_visible= False,
+            action_visible= True,
         )
         self.normalizer = LinearNormalizer()
         self.horizon=config.horizon
@@ -132,7 +176,8 @@ class DPAgent(AbstractAgent):
         for t in scheduler.timesteps:
             # 1. apply conditioning
             trajectory[condition_mask] = condition_data[condition_mask]
-
+            # 1.5 add the time embedding
+            # trajectory+=self.traj_position_embedding
             # 2. predict model output
             model_output = model(trajectory, t, 
                 local_cond=local_cond, global_cond=global_cond)
@@ -150,11 +195,6 @@ class DPAgent(AbstractAgent):
         return trajectory
     def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         features["status_feature"] = features["status_feature"].unsqueeze(1)
-        try:
-            features["past_trajectory"]=torch.stack(features["past_trajectory"],dim=0)
-            features["past_trajectory"]=torch.transpose(features["past_trajectory"],0,1)
-        except:
-            features["past_trajectory"]=features["past_trajectory"]
         
         obs_dict=features
         self.normalizer.fit(obs_dict)
@@ -183,6 +223,8 @@ class DPAgent(AbstractAgent):
             # print(this_nobs["lidar_feature"].shape)
             # this_nobs['lidar_feature']=this_nobs['lidar_feature'].unsqueeze(1)
             nobs_features = self.obs_encoder(this_nobs)
+            # nobs_features = nobs_features.reshape(B, To, -1)
+            # nobs_features = nobs_features + self.position_embedding
             # reshape back to B, Do
             global_cond = nobs_features.reshape(B, -1)
             # empty data for action
@@ -218,7 +260,7 @@ class DPAgent(AbstractAgent):
         start = To 
         end = start + self.n_action_steps
         action = action_pred[:,start:end]
-        print("action:",action[0])
+        # print("action:",action[0])
         result = {
             'trajectory': action,
             # 'action_pred': action_pred
@@ -233,8 +275,8 @@ class DPAgent(AbstractAgent):
     ) -> torch.Tensor:
                 # normalize input
                 
-        #batch = {"trajectory": torch.cat((features["past_trajectory"], targets["trajectory"]), dim=1), "camera_feature": features["camera_feature"],"lidar_feature": features["lidar_feature"],"status_feature": features["status_feature"]}
-        batch = {"trajectory": targets["trajectory"], "camera_feature": features["camera_feature"],"lidar_feature": features["lidar_feature"],"status_feature": features["status_feature"]}
+        batch = {"trajectory": torch.cat((features["past_trajectory"], targets["trajectory"]), dim=1), "camera_feature": features["camera_feature"],"lidar_feature": features["lidar_feature"],"status_feature": features["status_feature"]}
+        #batch = {"trajectory": targets["trajectory"], "camera_feature": features["camera_feature"],"lidar_feature": features["lidar_feature"],"status_feature": features["status_feature"]}
         # normalize input
         self.normalizer.fit(batch)
         assert 'valid_mask' not in batch
@@ -256,6 +298,8 @@ class DPAgent(AbstractAgent):
             this_nobs = dict_apply(nobs, 
                 lambda x: x[:,:self.n_obs_steps,...].reshape(-1,*x.shape[2:]))
             nobs_features = self.obs_encoder(this_nobs)
+            #nobs_features= nobs_features.reshape(batch_size, self.n_obs_steps, -1)
+            # nobs_features = nobs_features + self.position_embedding
             # reshape back to B, Do
             global_cond = nobs_features.reshape(batch_size, -1)
         else:
@@ -269,7 +313,6 @@ class DPAgent(AbstractAgent):
 
         # generate impainting mask
         condition_mask = self.mask_generator(trajectory.shape)
-
         # Sample noise that we'll add to the images
         noise = torch.randn(trajectory.shape, device=trajectory.device)
         bsz = trajectory.shape[0]
@@ -280,6 +323,7 @@ class DPAgent(AbstractAgent):
         ).long()
         # Add noise to the clean images according to the noise magnitude at each timestep
         # (this is the forward diffusion process)
+        # trajectory+=self.traj_position_embedding
         noisy_trajectory = self.noise_scheduler.add_noise(
             trajectory, noise, timesteps)
         # compute loss mask
@@ -290,7 +334,6 @@ class DPAgent(AbstractAgent):
         # Predict the noise residual
         pred = self.model(noisy_trajectory, timesteps, 
             local_cond=local_cond, global_cond=global_cond)
-        #print("pred noise:",pred[0])
         pred_type = self.noise_scheduler.config.prediction_type 
         if pred_type == 'epsilon':
             target = noise

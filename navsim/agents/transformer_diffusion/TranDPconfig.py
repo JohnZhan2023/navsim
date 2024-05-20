@@ -43,7 +43,7 @@ class MLPEncoder(nn.Module):
     def output_shape(self):
         return self.output_shape
 @dataclass
-class DPConfig:
+class TranDPConfig:
 
     trajectory_sampling: TrajectorySampling = TrajectorySampling(
         time_horizon=4, interval_length=0.5
@@ -53,6 +53,8 @@ class DPConfig:
     down_dims=(256,512,1024)
     kernel_size=5
     n_groups=8
+    k=1
+    
     cond_predict_scale=True
     input_history=[0,1,2,3]
     output_length=8
@@ -77,7 +79,11 @@ class DPConfig:
     # )
     obs_encoder=TranfuserEncoder(feature_dim,TransfuserConfig)
     
-    
+    ############ parse for transformer ##############
+    n_embd=256
+    n_inner=1024
+    debug_scene_level_prediction=False
+    debug_scenario_decoding=False
     
     
     # image_architecture: str = "resnet34"

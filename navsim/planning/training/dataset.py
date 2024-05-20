@@ -192,9 +192,14 @@ class Dataset(torch.utils.data.Dataset):
     def cache_dataset(self) -> None:
         assert self._cache_path is not None, "Dataset did not receive a cache path!"
         os.makedirs(self._cache_path, exist_ok=True)
-
+        
         # determine tokens to cache
         if self._force_cache_computation:
+            logger.error(
+                f"""
+                Starting caching of {len(tokens_to_cache)} tokens. Force_cache_computation is true.
+            """
+            )
             tokens_to_cache = self._scene_loader.tokens
         else:
             logger.error("now let's begin to cache again!")

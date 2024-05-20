@@ -65,6 +65,8 @@ def normalize(x):
         return y
     # mean(x[..., 2]) = 0, mean(sqrt(x[..., 2]**2)) = 0
     y[..., 2] = x[..., 2] * 10
+    if x.shape[-1]==3:
+        return y
     # mean(x[..., 3]) = 0.086, mean(sqrt(x[..., 3]**2))=0.090
     y[..., 3] += x[..., 3] / 2
     y[..., 3] += 0
@@ -77,6 +79,8 @@ def denormalize(y):
     if y.shape[-1]==2:
         return x
     x[..., 2] = y[..., 2] / 10
+    if y.shape[-1]==3:
+        return x
     x[..., 3] = y[..., 3] * 2
     return x
 

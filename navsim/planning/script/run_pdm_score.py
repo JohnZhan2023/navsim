@@ -52,8 +52,11 @@ def main(cfg: DictConfig) -> None:
     metric_cache_loader = MetricCacheLoader(Path(cfg.metric_cache_path))
 
     tokens_to_evaluate = list(set(scene_loader.tokens) & set(metric_cache_loader.tokens))
+    print("tokens to evaluate:",tokens_to_evaluate)
     num_missing_metric_cache_tokens = len(set(scene_loader.tokens) - set(metric_cache_loader.tokens))
     num_unused_metric_cache_tokens = len(set(metric_cache_loader.tokens) - set(scene_loader.tokens))
+    print("num_missing_metric_cache_tokens:",num_missing_metric_cache_tokens)
+    print("num_unused_metric_cache_tokens:",num_unused_metric_cache_tokens)
     if num_missing_metric_cache_tokens > 0:
         logger.warning(f"Missing metric cache for {num_missing_metric_cache_tokens} tokens. Skipping these tokens.")
     if num_unused_metric_cache_tokens > 0:
@@ -70,6 +73,7 @@ def main(cfg: DictConfig) -> None:
     score_rows: List[Tuple[Dict[str, Any], int, int]] = worker_map(worker, run_pdm_score, data_points)
     
     pdm_score_df = pd.DataFrame(score_rows)
+    print("pdm score df:",pdm_score_df)
     num_sucessful_scenarios = pdm_score_df["valid"].sum()
     num_failed_scenarios = len(pdm_score_df) - num_sucessful_scenarios
     average_row = pdm_score_df.drop(columns=["token", "valid"]).mean(skipna=True)

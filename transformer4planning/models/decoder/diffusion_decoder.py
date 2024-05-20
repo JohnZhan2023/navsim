@@ -143,8 +143,11 @@ class TrajDiffusionModel(BaseDiffusionModel):
         self.position_embedding = torch.nn.Parameter(position_embedding, requires_grad=True)
     
     def forward(self, x, t, state, info_dict=None):
+        #print("state:",state.shape)
+        #print("x:",x.shape)
         # input encoding
         state_embedding = self.state_encoder(state) # B * seq_len * feat_dim
+        #print("x dtype:",x.dtype)
         x_embedding = self.x_encoder(x) # B * seq_len * feat_dim
         t_embedding = self.time_encoder(t) # B * feat_dim
         t_embedding = t_embedding.unsqueeze(1) # -> B * 1 * feat_dim
@@ -155,7 +158,7 @@ class TrajDiffusionModel(BaseDiffusionModel):
 
         # feature = self.backbone(seq)
         # feature = feature[..., -x.shape[-2]:, :]
-        print(x_embedding.shape, state_embedding.shape, t_embedding.shape, self.position_embedding.shape)
+        #print(x_embedding.shape, state_embedding.shape, t_embedding.shape, self.position_embedding.shape)
         x_embedding = x_embedding + t_embedding + self.position_embedding
         if self.config.debug_scenario_decoding:
             assert info_dict is not None
@@ -171,8 +174,11 @@ class TrajDiffusionModel(BaseDiffusionModel):
             feature = self.cross_attn(feature, state_embedding + self.position_embedding) + self.adapter(feature, c=ob_embedding)
             # feature = self.cross_attn_scene(feature, state_embedding + self.position_embedding)
         else:
+            # print("x_embedding shape: ", x_embedding.shape)
+            # print("state_embedding shape: ", state_embedding.shape)
+            # print("position_embedding shape: ", self.position_embedding.shape)
             feature = self.self_attn(x_embedding)
-            feature = self.cross_attn(feature, state_embedding + self.position_embedding)
+            feature = self.cross_attn(feature, state_embedding + self.position_embedding[:,:4,:])
         
         output = self.x_decoder(feature)
         return output
@@ -377,8 +383,8 @@ class DiffusionWrapper(nn.Module):
         self.register_buffer('posterior_mean_coef2',
                              (1. - alphas_cumprod_prev) * np.sqrt(alphas) / (1. - alphas_cumprod))
 
-        print("We are now using diffusion model for decoder.")
-        print("When training, the forward method of the diffusion decoder returns loss, and while testing the forward method returns predicted trajectory.")
+        # print("We are now using diffusion model for decoder.")
+        # print("When training, the forward method of the diffusion decoder returns loss, and while testing the forward method returns predicted trajectory.")
 
         self.loss_fn = nn.MSELoss(reduction='none')
     
@@ -391,6 +397,7 @@ class DiffusionWrapper(nn.Module):
 
     # ------------------------- Train -------------------------
     def train_forward(self, hidden_state, trajectory_label, info_dict=None):
+        #print("We are now using diffusion model for decoder.")
         trajectory_label = normalize(trajectory_label)
         return self.train_loss(trajectory_label, hidden_state, info_dict=info_dict)
 
@@ -426,6 +433,7 @@ class DiffusionWrapper(nn.Module):
         seq_len = self.predict_range if self.predict_range is not None else state.shape[-2]
         shape = (batch_size, seq_len, self.action_dim)
         action, cls = self.p_sample_loop(state, shape, info_dict=info_dict, **kwargs)
+        #print("final action:",action.shape)
         action = denormalize(action)
         return action, cls
 
@@ -441,12 +449,14 @@ class DiffusionWrapper(nn.Module):
             assert not verbose, 'not supported'
             assert not cal_elbo, 'not supported'
             assert not return_diffusion, 'not supported'
+            #print("total cls:",total_cls)
 
             # for i in tqdm(reversed(range(0,self.n_timesteps))):
             for i in reversed(range(0,self.n_timesteps)):
                 timesteps = torch.full((batch_size,), i, device=device, dtype=torch.long)
                 x, cls = self.p_sample(x, timesteps, state, info_dict=info_dict, determin=determin)
-                total_cls = total_cls + cls
+                
+                total_cls = total_cls + cls.repeat(3, 1).T
 
             return x, total_cls
         else:
@@ -456,7 +466,9 @@ class DiffusionWrapper(nn.Module):
             # assert not determin, 'It does not make sense to use deterministic sampling with mc_num > 1'
             x = torch.randn(shape, device=device)
 
-            total_cls = -(torch.mean(x.detach()**2, dim=(1, 2)))         # Consider the prior score
+            total_cls = -(torch.mean(x.detach()**2, dim=(1, 2))) 
+            
+            # Consider the prior score
 
             # repeat state in dim 0 for mc_num times.
             # we don't know the shape of state, so we use torch.repeat_interleave
@@ -465,7 +477,7 @@ class DiffusionWrapper(nn.Module):
             for i in reversed(range(0,self.n_timesteps)):
                 timesteps = torch.full((batch_size * mc_num,), i, device=device, dtype=torch.long)
                 x, cls = self.p_sample(x, timesteps, state, info_dict=info_dict, determin=determin)
-                total_cls = total_cls + cls
+                
                 
             # reshape x into shape (batch_size, mc_num, ...)
             x = x.reshape(batch_size, mc_num, *x.shape[1:])

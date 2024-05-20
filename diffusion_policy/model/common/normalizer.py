@@ -108,7 +108,7 @@ class SingleFieldLinearNormalizer(DictOfTensorMixin):
             data: Union[torch.Tensor, np.ndarray, zarr.Array],
             last_n_dims=1,
             dtype=torch.float32,
-            mode='limits',
+            mode='gaussian',
             output_max=1.,
             output_min=-1.,
             range_eps=1e-4,
@@ -188,7 +188,7 @@ def _fit(data: Union[torch.Tensor, np.ndarray, zarr.Array],
         output_max=1.,
         output_min=-1.,
         range_eps=1e-4,
-        fit_offset=True):
+        fit_offset=False):
     assert mode in ['limits', 'gaussian']
     assert last_n_dims >= 0
     assert output_max > output_min
@@ -201,6 +201,7 @@ def _fit(data: Union[torch.Tensor, np.ndarray, zarr.Array],
     if dtype is not None:
         data = data.type(dtype)
 
+    
     # convert shape
     dim = 1
     if last_n_dims > 0:
@@ -208,11 +209,12 @@ def _fit(data: Union[torch.Tensor, np.ndarray, zarr.Array],
     data = data.reshape(-1,dim)
 
     # compute input stats min max mean std
-    input_min, _ = data.min(axis=0)
-    input_max, _ = data.max(axis=0)
-    input_mean = data.mean(axis=0)
-    input_std = data.std(axis=0)
 
+    input_min, _ = data.min(dim=0)
+    input_max, _ = data.max(dim=0)
+    input_mean = data.mean(dim=0)
+    input_std = data.std(dim=0)
+    
     # compute scale and offset
     if mode == 'limits':
         if fit_offset:
@@ -222,6 +224,10 @@ def _fit(data: Union[torch.Tensor, np.ndarray, zarr.Array],
             input_range[ignore_dim] = output_max - output_min
             scale = (output_max - output_min) / input_range
             offset = output_min - scale * input_min
+            # print("*******************")
+            # print("offset:",offset)
+            # print("scale:",scale)
+            # print("input_min:",input_min)
             offset[ignore_dim] = (output_max + output_min) / 2 - input_min[ignore_dim]
             # ignore dims scaled to mean of output max and min
         else:
@@ -237,6 +243,7 @@ def _fit(data: Union[torch.Tensor, np.ndarray, zarr.Array],
             scale = output_abs / input_abs
             offset = torch.zeros_like(input_mean)
     elif mode == 'gaussian':
+
         ignore_dim = input_std < range_eps
         scale = input_std.clone()
         scale[ignore_dim] = 1
@@ -275,7 +282,11 @@ def _normalize(x, params, forward=True):
     if forward:
         x = x * scale + offset
     else:
-        x = (x - offset) / scale
+        print("before unnorminalized x:",x[0])
+        print(offset," ",scale)
+        
+        x = -(x - offset) / scale
+        print("after unnorminalized x:",x[0])
     x = x.reshape(src_shape)
     return x
 
