@@ -1,4 +1,4 @@
-SPLIT=private_test_e2e
+SPLIT=mini
 
 python $NAVSIM_DEVKIT_ROOT/navsim/planning/script/run_metric_caching.py \
 split=$SPLIT \

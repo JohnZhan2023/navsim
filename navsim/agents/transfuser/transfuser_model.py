@@ -78,10 +78,13 @@ class TransfuserModel(nn.Module):
         )
 
     def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-
-        camera_feature: torch.Tensor = features["camera_feature"][:,-1,...].squeeze()
-        lidar_feature: torch.Tensor = features["lidar_feature"][:,-1,...].squeeze().unsqueeze(1)
+        camera_feature: torch.Tensor = features["camera_feature"].squeeze().unsqueeze(0)
+        lidar_feature: torch.Tensor = features["lidar_feature"][:,-1,...].squeeze().unsqueeze(0).unsqueeze(0)
         status_feature: torch.Tensor = features["status_feature"]
+
+        # camera_feature: torch.Tensor = features["camera_feature"][:,-1,...].squeeze()
+        # lidar_feature: torch.Tensor = features["lidar_feature"][:,-1,...].squeeze().unsqueeze(1)
+        # status_feature: torch.Tensor = features["status_feature"]
 
         batch_size = status_feature.shape[0]
 

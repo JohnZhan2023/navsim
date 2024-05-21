@@ -100,7 +100,7 @@ class TransfuserCallback(pl.Callback):
 
         sliced_tensor = features["camera_feature"][:, 1, :, :, :].squeeze(1)
         camera =sliced_tensor.permute(0,  2, 3, 1).numpy()
-        #bev = targets["bev_semantic_map"].numpy()
+        bev = targets["bev_semantic_map"].numpy()
         lidar_map = features["lidar_feature"][:, -1, :, :, :].squeeze(1).numpy()
         agent_labels = targets["agent_labels"].numpy()
         agent_states = targets["agent_states"].numpy()
