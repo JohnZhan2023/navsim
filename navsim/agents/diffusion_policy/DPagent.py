@@ -37,41 +37,37 @@ from diffusion_policy.model.diffusion.mask_generator import LowdimMaskGenerator
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 from diffusion_policy.common.pytorch_util import dict_apply
 
+def normalize(x):
+    y = torch.zeros_like(x)
+    # mean(x[...,0]) = 9.517, mean(sqrt(x[...,0]**2))=9.517
+    y[..., 0] += (x[..., 0] / 10)
+    y[..., 0] -= 0
+    # mean(x[..., 1]) = -0.737, mean(sqrt(x[..., 1]**2))=0.783
+    y[..., 1] += (x[..., 1] / 10)
+    y[..., 1] += 0
+    if x.shape[-1]==2:
+        return y
+    # mean(x[..., 2]) = 0, mean(sqrt(x[..., 2]**2)) = 0
+    y[..., 2] = x[..., 2] * 10
+    if x.shape[-1]==3:
+        return y
+    # mean(x[..., 3]) = 0.086, mean(sqrt(x[..., 3]**2))=0.090
+    y[..., 3] += x[..., 3] / 2
+    y[..., 3] += 0
+    return y
 
-class SinusoidalPosEmb(nn.Module):
-    """
-    Sin positional embedding, where the noisy time step are encoded as an pos embedding.
-    """
-    def __init__(self, dim):
-        super().__init__()
-        self.dim = dim
+def denormalize(y):
+    x = torch.zeros_like(y)
+    x[..., 0] = (y[..., 0]) * 10
+    x[..., 1] = (y[..., 1]) * 10
+    if y.shape[-1]==2:
+        return x
+    x[..., 2] = y[..., 2] / 10
+    if y.shape[-1]==3:
+        return x
+    x[..., 3] = y[..., 3] * 2
+    return x
 
-    def forward(self, x):
-        device = x.device
-        half_dim = self.dim // 2
-        emb = math.log(10000) / (half_dim - 1)
-        emb = torch.exp(torch.arange(half_dim, device=device) * -emb)
-        emb = x[:, None] * emb[None, :]
-        emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
-        return emb
-def uniform_positional_embedding(key_point_num, feat_dim):
-    point_num = key_point_num
-    position = torch.tensor([[6 * (point_num - i)] for i in range(point_num)])
-
-    # Create a table of divisors for the even indices
-    div_term = torch.exp(torch.arange(0, (feat_dim // 2) + (feat_dim % 2), dtype=torch.float32) * (-math.log(100.0) / max((feat_dim // 2) - 1, 1)))
-
-    # Generate the positional encodings
-    pos_embedding = torch.zeros((point_num, feat_dim))
-    pos_embedding[:, 0::2] = torch.sin(position * div_term[:feat_dim // 2 + feat_dim % 2])
-
-    if feat_dim % 2 == 0:
-        pos_embedding[:, 1::2] = torch.cos(position * div_term[:feat_dim // 2])
-    else:
-        # For odd feat_dim, apply cosine to all but the last one which uses sine
-        pos_embedding[:, 1::2] = torch.cos(position * div_term[:-1])
-
-    return pos_embedding
 
 
 class DPAgent(AbstractAgent):
@@ -197,8 +193,10 @@ class DPAgent(AbstractAgent):
         features["status_feature"] = features["status_feature"].unsqueeze(1)
         
         obs_dict=features
-        self.normalizer.fit(obs_dict)
-        nobs = self.normalizer.normalize(obs_dict)
+        # self.normalizer.fit(obs_dict)
+        # nobs = self.normalizer.normalize(obs_dict)
+        nobs = {key: normalize(value) for key, value in features.items()}
+        
         
         value = next(iter(nobs.values()))
         B, To = value.shape[:2]
@@ -254,7 +252,7 @@ class DPAgent(AbstractAgent):
         
         # unnormalize prediction
         naction_pred = nsample[...,:Da]
-        action_pred = self.normalizer['past_trajectory'].unnormalize(naction_pred)
+        action_pred = denormalize(naction_pred)
         # get action
         #为了保证Unet可以downsampling实际会输出一个更长的horizon
         start = To 
@@ -278,11 +276,12 @@ class DPAgent(AbstractAgent):
         batch = {"trajectory": torch.cat((features["past_trajectory"], targets["trajectory"]), dim=1), "camera_feature": features["camera_feature"],"lidar_feature": features["lidar_feature"],"status_feature": features["status_feature"]}
         #batch = {"trajectory": targets["trajectory"], "camera_feature": features["camera_feature"],"lidar_feature": features["lidar_feature"],"status_feature": features["status_feature"]}
         # normalize input
-        self.normalizer.fit(batch)
-        assert 'valid_mask' not in batch
-        nobs = self.normalizer.normalize(batch)
+        # self.normalizer.fit(batch)
+        # assert 'valid_mask' not in batch
+        # nobs = self.normalizer.normalize(batch)
+        nobs = {key: normalize(value) for key, value in batch.items()}
         
-        nactions = self.normalizer['trajectory'].normalize(batch['trajectory'])
+        nactions = normalize(batch['trajectory'])
         batch_size = nactions.shape[0]
         horizon = nactions.shape[1]
         #we don't norminalize
@@ -329,6 +328,8 @@ class DPAgent(AbstractAgent):
         # compute loss mask
         loss_mask = ~condition_mask
         # apply conditioning
+        noisy_trajectory = noisy_trajectory.to(torch.float32)  # 确保noisy_trajectory是Float类型
+        
         noisy_trajectory[condition_mask] = cond_data[condition_mask].to(torch.float32)
         
         # Predict the noise residual

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, List, Tuple, Dict
+import numpy as np
 
 from nuplan.common.maps.abstract_map import SemanticMapLayer
 from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
@@ -17,12 +18,17 @@ class MLPEncoder(nn.Module):
         # 卷积层用于压缩 camera_feature
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1)  # 减半图像尺寸
         self.pool = nn.MaxPool2d(2, 2)  # 再次减半图像尺寸
+        
+        self.conv2 = nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1)  # 减半图像尺寸
+        self.pool2 = nn.MaxPool2d(2, 2)  # 再次减半图像尺寸
         # 计算卷积后的尺寸以适配全连接层
         # 假设 camera_feature 的原始尺寸是 [3, 256, 1024]
         self.conv_output_size = 16 * (256 // 4) * (1024 // 4)  # stride 和 pooling 各减半尺寸
+        self.conv_output_size2 = 16 * (256 // 4) * (256 // 4)  # stride 和 pooling 各减半尺寸
 
         # 全连接层处理压缩后的 camera_feature
         self.fc_camera = nn.Linear(self.conv_output_size, output_dim)
+        self.fc_lidar = nn.Linear(self.conv_output_size2, output_dim)
 
         # 全连接层处理 status_feature
         self.fc_status = nn.Linear(input_dim, output_dim)  # 压缩 status_feature 到 output_dim 维
@@ -34,12 +40,23 @@ class MLPEncoder(nn.Module):
         camera = F.relu(camera)
         flattened_camera = camera.view(camera.size(0), -1)
         output_camera = self.fc_camera(flattened_camera)
+        
+        # 处理lidar_feature
+        lidar = self.conv2(x['lidar_feature'])
+        lidar = self.pool2(lidar)
+        lidar = F.relu(lidar)
+        flattened_lidar = lidar.view(lidar.size(0), -1)
+        output_lidar = self.fc_lidar(flattened_lidar)
+        
 
         # 处理 status_feature
         status = x['status_feature']
         output_status = self.fc_status(status)
+        # print("the shape of status:",output_status.shape)
+        # print("the shape of camera:",output_camera.shape)
+        output_status = output_status.repeat(4,1)
 
-        return output_camera, output_status
+        return output_camera+output_status+output_lidar
     def output_shape(self):
         return self.output_shape
 @dataclass

@@ -138,7 +138,7 @@ class TranDPagent(AbstractAgent):
     ) -> torch.Tensor:
                 # normalize input
         self.model.training = True
-        batch = {"trajectory": torch.cat((features["past_trajectory"], targets["trajectory"]), dim=1), "camera_feature": features["camera_feature"],"lidar_feature": features["lidar_feature"],"status_feature": features["status_feature"]}
+        batch = {"trajectory": torch.cat((features["past_trajectory"], targets["trajectory"]), dim=1),"past_trajectory":features["past_trajectory"], "camera_feature": features["camera_feature"],"lidar_feature": features["lidar_feature"],"status_feature": features["status_feature"]}
         #batch = {"trajectory": targets["trajectory"], "camera_feature": features["camera_feature"],"lidar_feature": features["lidar_feature"],"status_feature": features["status_feature"]}
         # normalize input
         self.normalizer.fit(batch)

@@ -3,12 +3,14 @@ AUTHORS="JiahaoZhan"
 EMAIL="22307140116@m.fudan.edu.cn"
 INSTITUTION="MarsLab"
 COUNTRY="China"
+CHECKPOINT="/cephfs/zhanjh/exp/training_transfuser_agent/2024.05.20.11.11.33/lightning_logs/version_0/checkpoints/transfuser300.ckpt"
 
 python $NAVSIM_DEVKIT_ROOT/navsim/planning/script/run_create_submission_pickle.py \
-agent=constant_velocity_agent \
+agent=transfuser_agent \
+agent.checkpoint_path=$CHECKPOINT \
 split=mini \
 scene_filter=warmup_test_e2e \
-experiment_name=submission_cv_agent_warmup \
+experiment_name=submission_transfuser_agent_warmup \
 team_name=$TEAM_NAME \
 authors=$AUTHORS \
 email=$EMAIL \

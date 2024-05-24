@@ -37,7 +37,8 @@ class TrajectoryDecoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        out_features = 4 if self.config.predict_yaw else 2
+        self.pred_length = config.n_action_steps
+        out_features = 4 if self.config.predict_yaw else 3
         self.model = DecoderResCat(config.n_inner, 
                                    config.n_embd, 
                                    out_features=out_features)
@@ -176,20 +177,25 @@ class TrajectoryDecoder(nn.Module):
 
                     if len(offroad_loss_batch) > 0:
                         traj_loss += torch.mean(torch.stack(offroad_loss_batch))
+            elif self.config.task == "openscenes":
+                #print("calculating loss traj_logits shape: ",traj_logits.shape)
+                traj_loss = self.loss_fct(traj_logits, label.to(device))
                     
             traj_loss *= self.config.trajectory_loss_rescale
+            traj_loss.to(torch.float32)
         else:
             traj_logits = torch.zeros_like(label[..., :2])
             traj_loss = None
         
         return traj_loss, traj_logits
     
-    def generate_trajs(self, hidden_output, info_dict):
-        pred_length = info_dict.get("pred_length", 0)
+    def forward(self, hidden_output):
+        pred_length = self.pred_length
         assert pred_length > 0
+        
         traj_hidden_state = hidden_output[:, -pred_length-1:-1, :]
         traj_logits = self.model(traj_hidden_state)
-        
+        #print("traj_logits shape: ",traj_logits.shape)
         return traj_logits
     
 class ProposalDecoder(nn.Module):
@@ -308,7 +314,7 @@ class KeyPointMLPDeocder(nn.Module):
         elif 'l1' in self.config.loss_fn:
             self.loss_fct = nn.SmoothL1Loss(reduction=loss_reduction)
         else:
-            print(self.config.loss_fn)
+            #print(self.config.loss_fn)
             assert False, "loss fn not supported"
         if self.config.generate_diffusion_dataset_for_key_points_decoder:
             self.save_training_diffusion_feature_dir = os.path.join(self.config.diffusion_feature_save_dir,'train/')

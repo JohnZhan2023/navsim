@@ -27,7 +27,7 @@ dataloader:
 
 trainer:
   params:
-    max_epochs: 300  # maximum number of training epochs
+    max_epochs: 50  # maximum number of training epochs
     check_val_every_n_epoch: 1  # run validation set every n training epochs
     val_check_interval: 1.0  # [%] run validation set every X% of training set
 
@@ -38,7 +38,7 @@ trainer:
     strategy: ddp_find_unused_parameters_true
     precision: 16-mixed  # floating point precision
     num_nodes: 1  # Number of nodes used for training
-    devices: 8
+    devices: 1
 
     num_sanity_val_steps: 0  # number of validation steps to run before training begins
     fast_dev_run: false  # runs 1 batch of train/val/test for sanity
