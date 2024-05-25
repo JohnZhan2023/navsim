@@ -179,6 +179,8 @@ class TrajectoryDecoder(nn.Module):
                         traj_loss += torch.mean(torch.stack(offroad_loss_batch))
             elif self.config.task == "openscenes":
                 #print("calculating loss traj_logits shape: ",traj_logits.shape)
+                print("calculating loss label shape: ",label.shape)
+                print("calculating loss traj_logits shape: ",traj_logits.shape)
                 traj_loss = self.loss_fct(traj_logits, label.to(device))
                     
             traj_loss *= self.config.trajectory_loss_rescale

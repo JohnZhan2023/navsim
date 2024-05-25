@@ -25,8 +25,8 @@ class TranfuserEncoder(nn.Module):
         lidar_feature: torch.Tensor = features["lidar_feature"] # (B*T, 1, 256, 256)
         status_feature: torch.Tensor = features["status_feature"] # (B, 8)
         past_feature: torch.Tensor = features["past_trajectory"] # (B, T, 3)
-        B = status_feature.shape[0]
-        T = camera_feature.shape[0]//B
+        B = past_feature.shape[0]
+        T = camera_feature.shape[1]
         past_feature = past_feature.view([B*T,-1])
         
          

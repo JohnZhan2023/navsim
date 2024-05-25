@@ -4,4 +4,4 @@ experiment_name=training_transfuser_agent \
 scene_filter=all_scenes \
 split=trainval \
 use_cache_without_dataset=True \
-cache_path=/cephfs/zhanjh/exp/training_cache_trainval \
+cache_path=/cephfs/zhanjh/exp/train \

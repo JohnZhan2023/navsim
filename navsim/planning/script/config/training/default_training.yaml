@@ -27,7 +27,7 @@ dataloader:
 
 trainer:
   params:
-    max_epochs: 50  # maximum number of training epochs
+    max_epochs: 10  # maximum number of training epochs
     check_val_every_n_epoch: 1  # run validation set every n training epochs
     val_check_interval: 1.0  # [%] run validation set every X% of training set
 
