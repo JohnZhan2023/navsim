@@ -630,6 +630,8 @@ class STR(PreTrainedModel):
         return pred_dict              
 
 def build_models(model_args):
+    print('Building model...')
+    print('Model name: ', model_args.model_name)
     if 'gpt' in model_args.model_name:
         from transformer4planning.models.backbone.gpt2 import STR_GPT2, STRGPT2Config
         config_p = STRGPT2Config()
@@ -743,6 +745,7 @@ def build_models(model_args):
             config_p.n_inner = config_p.n_embd * 4
             config_p.n_head = 32
     elif 'mixtral' in model_args.model_name:
+        print('MixTral model is under development!')
         from transformer4planning.models.backbone.mixtral import STR_Mixtral, STRMixtralConfig
         config_p = STRMixtralConfig()
         config_p.update_by_model_args(model_args)

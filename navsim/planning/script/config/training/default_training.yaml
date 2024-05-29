@@ -20,14 +20,14 @@ force_cache_computation: false
 
 dataloader:
   params:
-    batch_size: 16  # number of samples per batch
+    batch_size: 8  # number of samples per batch
     num_workers: 4  # number of workers for data loading
     pin_memory: true  # pin memory for faster GPU transfer
     prefetch_factor: 2  # number of samples loaded in advance by each worker
 
 trainer:
   params:
-    max_epochs: 10  # maximum number of training epochs
+    max_epochs: 150  # maximum number of training epochs
     check_val_every_n_epoch: 1  # run validation set every n training epochs
     val_check_interval: 1.0  # [%] run validation set every X% of training set
 
@@ -38,7 +38,7 @@ trainer:
     strategy: ddp_find_unused_parameters_true
     precision: 16-mixed  # floating point precision
     num_nodes: 1  # Number of nodes used for training
-    devices: 1
+    devices: 8
 
     num_sanity_val_steps: 0  # number of validation steps to run before training begins
     fast_dev_run: false  # runs 1 batch of train/val/test for sanity
